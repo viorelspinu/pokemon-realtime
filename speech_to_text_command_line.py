@@ -75,16 +75,7 @@ def sample_recognize(local_file_path):
 
 
 while(True):
-    #input("Press Enter to continue...")
-    #record()
-    #sample_recognize("file.wav")
-    #sample_recognize("./file.wav")
-
-    #with io.open("./s.wav", "rb") as f:
-    #    content = f.read()
-
-    #with io.open("./b.wav", "rb") as f:
-    #    content = f.read()
-    service = GoogleCloudService()
-    service.do_speech_to_text_post('b', "en-US")
+    input("Press Enter to continue...")
+    record()
+    sample_recognize("./file.wav")
 

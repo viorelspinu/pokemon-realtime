@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "859865653339",
+    "firebase_url": "https://pvpcounters.firebaseio.com",
+    "project_id": "pvpcounters",
+    "storage_bucket": "pvpcounters.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:859865653339:android:04ce042bd13d588c179f7e",
+        "android_client_info": {
+          "package_name": "com.vsp.pvpcounters"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "859865653339-vsqt10utjr1s0gfldt3rhod7rc38p9db.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIwJ9StlHgtIatW2jFvXydnDGuwzHj7VQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "859865653339-vsqt10utjr1s0gfldt3rhod7rc38p9db.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

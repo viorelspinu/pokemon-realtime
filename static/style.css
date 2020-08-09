@@ -1,0 +1,44 @@
+  html, body {
+    margin: 0px;
+    padding: 0px;
+    height: 100%;    
+    background-color:#DDD;
+  }
+
+  body{
+    padding-top: 4rem;
+  }
+
+  
+  .full_height_div {
+    height: 80vh;
+    overflow: auto;
+  }
+
+  .border-bottom {
+    border-bottom: 1px solid #999;
+  }
+
+  .starter-template {
+    padding: 0rem 0rem;
+    text-align: left;
+  }
+
+  ::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 5px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    border-radius: 5px;
+    background-color: rgba(0,0,0,.5);
+    -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
+  }
+
+  .rounded {
+    -moz-border-radius:10px 10px 10px 10px;  // rounds corners for firefox
+    border-radius:10px 10px 10px 10px;  //rounds corners for other browsers
+    border:solid 3px #000;
+    padding:10px;
+  }
+

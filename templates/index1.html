@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <meta charset="utf-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="/static/style.css">
+  <title>Hello, world!</title>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+  <script src="static/recording.js"></script>
+  <script src="static/websocket.js"></script>
+  <script src="static/papaparse.min.js"></script>
+  <script src="static/compute.js"></script>
+  <script src="static/data.js"></script>
+  <style>
+    body {
+      margin: 0px;
+      padding: 0px;
+    }
+
+    .full_height_div {
+      height: 80vh;
+      overflow: auto;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <div style=''>
+    <!--
+    <button onclick="downloadAudio()">download</button>
+-->
+    <button style='font-size: 40px;' id="startRecordingButton">RECORD</button>
+    <button style='font-size: 40px;' id="stopRecordingButton">STOP</button>
+  </div>
+
+
+
+  <div id="message" style='margin-left:40%;margin-top:30px;font-size:18px'>
+    Keep ENTER down and speak.
+  </div>
+  <div id="recognized" style='font-size:24px;margin-left:40%;margin-top:30px'>
+
+  </div>
+  <div id="counter" style='font-size:48px'>
+
+  </div>
+
+  <div style='margin-left:20px;margin-bottom:40px'>
+    click to pokemon name to learn correct pronunciation
+  </div>
+  <div class='ml-5'>
+    <div class='mb-4' id="options">
+      <button onclick="populate(option1)">Wigglytuff, Skarmory, Umbreon</button>
+      <button onclick="populate(option2)">Skarmory, Hypno, Umbreon</button>
+      <button onclick="populate(option3)">Wishcash, Skarmory, Umbreon</button>
+    </div>
+    <div id="inputArea">
+      <textarea id="pokemons" cols="100" rows="10" class='mt-5' style='font-size: 10px'>
+    </textarea>
+      <br>
+      <input value="Parse" type="button" id="parseButton"></input>
+    </div>
+
+    <div id="pokemonTable">
+
+    </div>
+
+  </div>
+
+
+
+</body>
+
+<script>
+
+  var websocket = null;
+
+  pokemonList = null;
+
+  pokemonListParsed = false;
+
+  $(function () {
+
+
+
+    initUI();
+
+    addStopAudioListener(function (base64) {
+      websocket.send("____BASE64____" + base64);
+    });
+
+    initWebsocket();
+
+  });
+
+
+  function populate(text) {
+    $("#pokemons").val(text);
+    $("#options").hide();
+  }
+
+
+  function initUI() {
+    $("#assistantCurrent").hide();
+    $("#humanCurrent").hide();
+    $("#stopRecordingButton").hide();
+
+
+
+
+
+
+    var startRecordingButton = document.getElementById("startRecordingButton");
+    var stopRecordingButton = document.getElementById("stopRecordingButton");
+    var parseButton = document.getElementById("parseButton");
+    parseButton.addEventListener('click', function () {
+      parsePokemons();
+
+    });
+
+
+
+    document.addEventListener('keydown', (key) => {
+      if (key.keyCode != 13) {
+        return;
+      }
+      $("#message").html("SPEAK NOW ! Release ENTER to end.");
+      if (!pokemonListParsed) {
+        parsePokemons();
+      }
+      startRecording();
+    });
+
+    document.addEventListener('keyup', (key) => {
+      if (key.keyCode != 13) {
+        return;
+      }
+      $("#message").html("Keep ENTER down and speak.");
+      stopRecording();
+    });
+
+
+    startRecordingButton.addEventListener("click", function () {
+      if (!pokemonListParsed) {
+        parsePokemons();
+      }
+      startRecording();
+    });
+
+    stopRecordingButton.addEventListener("click", function () {
+      stopRecording();
+    });
+
+
+  }
+
+
+</script>
+
+
+</html>

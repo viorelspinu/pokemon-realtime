@@ -3,44 +3,38 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
-import grpc.experimental.gevent as grpc_gevent
 
 from time import sleep
 
+from google.cloud import speech_v1p1beta1
 import io
-from flask import Flask, render_template, current_app
+from flask import Flask, render_template
+from flask_sockets import Sockets
 import base64
+from google_cloud_service import GoogleCloudService
 import os
 import datetime
-from flask import jsonify
-from os import listdir
-from os.path import isfile, join
-import string
-from flask import request
-from itertools import cycle
-import base64
-from flask_sockets import Sockets
-from flask import g
-import json
+
+
 import sys
 
 
-# call to google speech gets blocked; see https://github.com/grpc/grpc/issues/4629
+#call to google speech gets blocked; see https://github.com/grpc/grpc/issues/4629 
 from gevent import monkey
 monkey.patch_all()
+import grpc.experimental.gevent as grpc_gevent
 grpc_gevent.init_gevent()
-# --------
+#--------
 
 
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.debug = True
+app.debug=True
 sockets = Sockets(app)
 
-app_context = app.app_context()
-app_context.push()
-current_app.ws = {}
+
+google_cloud_service = GoogleCloudService()
 
 @app.after_request
 def add_header(r):
@@ -52,102 +46,34 @@ def add_header(r):
     return r
 
 
-def load_pokemon_data_from_file(cup, file):
-    data = load_full_data_from_file(cup, file)
-    return (data['pokemon'])
-
-
-def load_full_data_from_file(cup, file):
-    folder = "./data/compiled-data/" + cup
-    with open(folder + "/" + file) as f:
-        data = json.load(f)
-        return (data)
-
 @sockets.route('/chat')
-def chat_socket(ws):    
+def chat_socket(ws):
     while not ws.closed:
         message = ws.receive()
         if message is None:
             continue
-        if message.startswith("____CLIENT_ID____"):
-            client_id = message.replace("____CLIENT_ID____", "")                    
-            current_app.ws[client_id] = ws
-    
-            
-@app.route('/app')
-def index():
-    return render_template('index3.html')
 
-@app.route('/set')
-def set():
-    name = request.args.get('name')
-    client_id = request.args.get('client_id')
-    if (client_id in current_app.ws):
-        ws = current_app.ws[client_id]
-        if (not ws is None):
-            send_websocket(ws, "___SET_NAME___" + name)
-    return jsonify("{reply:ok}")
+        if(message.startswith("____BASE64____")):
+            message = message.replace("____BASE64____", "")
+            audio_content = base64.b64decode(message)
+
+            text = google_cloud_service.do_speech_to_text_post(audio_content, "en-US")
+            now = datetime.datetime.now()
+            print(now.strftime("%Y-%m-%d %H:%M:%S") + " " + text)
+            ws.send("___STT_TEXT_RESPONSE___" + text)    
+
+        if(message.startswith("__SAY__TEXT__")):
+            pokemon_name = message.replace("__SAY__TEXT__", "")        
+            mp3_base64 = base64.b64encode(google_cloud_service.do_text_to_speech(pokemon_name))
+            ws.send("___POKEMON_NAME_MP3___" + mp3_base64.decode("utf-8"))
+
+
 
 @app.route('/')
-def landing():
-    return render_template('landing.html')
+def index():
+    google_cloud_service.do_text_to_speech("azumaril")
+    return render_template('index1.html')
 
-@app.route('/all-pokemon')
-def pokemon_list():
-    #compute_and_write_all_pokemon_string("great")
-    cup = request.args.get('cup')
-    if (cup is None):
-        cup = "ultra"
-    with open("./data/response/" + cup + "-all-pokemon.base64") as f:
-        data = f.read()
-        return jsonify(data)
-
-def send_websocket(ws, text):
-    ws.send(text)
-
-
-def compute_and_write_all_pokemon_string(cup):
-    folder = "./data/compiled-data/" + cup
-    pokemon_files = [f for f in listdir(folder) if isfile(join(folder, f))]
-    pokemon_data = []
-    for p in pokemon_files:
-        current_pokemon_data = load_pokemon_data_from_file(cup, p)
-
-        current_data = {}
-        current_data['file'] = p
-        current_data['pokemon_data'] = current_pokemon_data
-
-        pokemon_data.append(current_data)
-
-    result = jsonify(pokemon_data)
-    message = result.get_data(as_text=True)
-    key = ''
-    cyphered = ''.join(chr(ord(c) ^ ord(k)) for c, k in zip(message, cycle(key)))
-    base64_response = base64.b64encode(cyphered.encode("utf-8"))
-    with open('./data/response/' + cup + "-all-pokemon.base64", 'wb') as f:
-        f.write(base64_response)
-        f.close
-    # return jsonify(base64_response.decode("utf-8"))
-
-
-@app.route('/my-pokemon')
-def my_pokemon():
-    cup = request.args.get('cup')
-    if (cup is None):
-        cup = "ultra"
-    pokemon_files = request.args.get('files').split(',')
-    pokemon_data = []
-    for p in pokemon_files:
-        current_data = load_full_data_from_file(cup, p + ".json")
-        pokemon_data.append(current_data)
-
-    result = jsonify(pokemon_data)
-    message = result.get_data(as_text=True)
-    key = ''
-    cyphered = ''.join(chr(ord(c) ^ ord(k)) for c, k in zip(message, cycle(key)))
-    base64_response = base64.b64encode(cyphered.encode("utf-8"))
-
-    return jsonify(base64_response.decode("utf-8"))
 
 
 if __name__ == '__main__':

@@ -1,8 +1,10 @@
 
+var smoothValue = 0;
 var lastTimeSound = (new Date()).getTime();
 var recordingActive = false;
 
-var audioData = [];
+var leftchannel = [];
+var rightchannel = [];
 var recorder = null;
 var recordingLength = 0;
 var volume = null;
@@ -12,6 +14,8 @@ var context = null;
 var blob = null;
 
 var bufferSize = 2048;
+var numberOfInputChannels = 2;
+var numberOfOutputChannels = 2;
 var stopAudioListener = [];
 
 
@@ -24,9 +28,33 @@ function onAudioProcess(e) {
   if (!recordingActive) {
     return;
   }
-  let data = e.inputBuffer.getChannelData(0);
-  audioData.push(new Float32Array(data));
+
+  leftchannel.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+  rightchannel.push(new Float32Array(e.inputBuffer.getChannelData(1)));
+
+  average = 250 + averageArray(e.inputBuffer.getChannelData(0)) * 1000;
   recordingLength += bufferSize;
+  smoothValue = smoothValue * 0.5 + average * 0.5;
+
+  if (smoothValue > 450) {
+    smoothValue = 450;
+  }
+
+  $("#humanIcon").css('height', Math.round(smoothValue * 0.7) + "px");
+  $("#humanIcon").css('width', Math.round(smoothValue * 0.7) + "px");
+
+
+  $("#recognized").html(Math.round(smoothValue));
+  if (smoothValue > 300) {
+    lastTimeSound = (new Date()).getTime();
+  }
+
+  if (((new Date()).getTime() - lastTimeSound) > 20000) {
+    if (recordingActive) {
+      console.log("stop recording due to silence");
+      stopRecording();
+    }
+  }
 }
 
 function convertBlobToBase64(blob, callback) {
@@ -67,8 +95,8 @@ function playAudio() {
 
 
 function startRecording() {
-
-  if (recordingActive) {
+  
+  if (recordingActive){
     return;
   }
 
@@ -78,12 +106,13 @@ function startRecording() {
   $("#startRecordingButton").hide();
 
 
-  audioData = [];
+  leftchannel = [];
+  rightchannel = [];
   recorder = null;
   recordingLength = 0;
   lastTimeSound = (new Date()).getTime();
 
-
+  
   // Initialize recorder
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
   navigator.getUserMedia(
@@ -100,9 +129,9 @@ function startRecording() {
       // bufferSize: the onaudioprocess event is called when the buffer is full
 
       if (context.createScriptProcessor) {
-        recorder = context.createScriptProcessor(bufferSize, 1, 1);
+        recorder = context.createScriptProcessor(bufferSize, numberOfInputChannels, numberOfOutputChannels);
       } else {
-        recorder = context.createJavaScriptNode(bufferSize, 1, 1);
+        recorder = context.createJavaScriptNode(bufferSize, numberOfInputChannels, numberOfOutputChannels);
       }
       recorder.onaudioprocess = function (e) {
         onAudioProcess(e);
@@ -122,16 +151,23 @@ function stopRecording() {
   if (!recordingActive) {
     return;
   }
-
+  
   $("#stopRecordingButton").hide();
   $("#startRecordingButton").show();
 
   recordingActive = false;
 
+  // stop recording
   recorder.disconnect(context.destination);
   mediaStream.disconnect(recorder);
-  var audioBuffer = flattenArray(audioData, recordingLength);
-  var interleaved = audioBuffer;
+  // we flat the left and right channels down
+  // Float32Array[] => Float32Array
+  var leftBuffer = flattenArray(leftchannel, recordingLength);
+  var rightBuffer = flattenArray(rightchannel, recordingLength);
+  // we interleave both channels together
+  // [left[0],right[0],left[1],right[1],...]
+  var interleaved = interleave(leftBuffer, rightBuffer);
+  // we create our wav file
   var buffer = new ArrayBuffer(44 + interleaved.length * 2);
   var view = new DataView(buffer);
   // RIFF chunk descriptor
@@ -142,7 +178,7 @@ function stopRecording() {
   writeUTFBytes(view, 12, 'fmt ');
   view.setUint32(16, 16, true); // chunkSize
   view.setUint16(20, 1, true); // wFormatTag
-  view.setUint16(22, 1, true); // wChannels: mono (1 channel)
+  view.setUint16(22, 2, true); // wChannels: stereo (2 channels)
   view.setUint32(24, sampleRate, true); // dwSamplesPerSec
   view.setUint32(28, sampleRate * 4, true); // dwAvgBytesPerSec
   view.setUint16(32, 4, true); // wBlockAlign
@@ -183,6 +219,17 @@ function flattenArray(channelBuffer, recordingLength) {
   return result;
 }
 
+function interleave(leftChannel, rightChannel) {
+  var length = leftChannel.length + rightChannel.length;
+  var result = new Float32Array(length);
+  var inputIndex = 0;
+  for (var index = 0; index < length;) {
+    result[index++] = leftChannel[inputIndex];
+    result[index++] = rightChannel[inputIndex];
+    inputIndex++;
+  }
+  return result;
+}
 function writeUTFBytes(view, offset, string) {
   for (var i = 0; i < string.length; i++) {
     view.setUint8(offset + i, string.charCodeAt(i));

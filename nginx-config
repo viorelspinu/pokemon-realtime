@@ -18,45 +18,9 @@
 
 # Default server configuration
 #
-
-
 server {
-     listen 80;
-     listen [::]:80;
-     server_name pisimov.info www.pisimov.info;
-
-     root /home/ana;
-
-     index index.html index.htm;
-
-     location / {
-          try_files $uri $uri/ =404;		  
-     }
-}
-
-server {
-     listen 80;
-     listen [::]:80;
-     server_name pvpcounters.com;
-
-
-     location /alchemy {
-        proxy_pass      http://localhost:81/;
-        proxy_redirect     off;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Host $server_name;
-        
-     }
-}
-
-
-server {
-
-    listen 80;
-    server_name pvpcounters.com www.pvpcounters.com;
-    return 301 https://pvpcounters.com$request_uri;
+	listen 80 default_server;
+	listen [::]:80 default_server;
 
 	# SSL configuration
 	#
@@ -74,20 +38,18 @@ server {
 	#
 	# include snippets/snakeoil.conf;
 
-	#root /var/www/html;
+	root /var/www/html;
 
 	# Add index.php to the list if you are using PHP
-	#index index.html index.htm index.nginx-debian.html;
+	index index.html index.htm index.nginx-debian.html;
 
-	#server_name _;
-        #return 301 https://$host$request_uri;
+	server_name _;
 
-
-	#location / {
+	location / {
 		# First attempt to serve request as file, then
 		# as directory, then fall back to displaying a 404.
-		#try_files $uri $uri/ =404;
-	#}
+		try_files $uri $uri/ =404;
+	}
 
 	# pass PHP scripts to FastCGI server
 	#
@@ -167,12 +129,7 @@ server {
 		proxy_http_version 1.1;
 		proxy_set_header Upgrade $http_upgrade;
 		proxy_set_header Connection "Upgrade";
-    }	
-
-	location /ana {
-		root /home/ana;
-		try_files $uri $uri/ =404;
-	}
+    }
 
 	location / {
 		proxy_pass http://pvpcounters.com:8080/;
@@ -196,4 +153,3 @@ server {
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 
 }
-

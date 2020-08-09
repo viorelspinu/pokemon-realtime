@@ -1,0 +1,1 @@
+{"name": "giratina", "types": ["dragon", "ghost"], "fast_moves": [{"name": "Dragon Breath", "type": "dragon", "code": "DB"}, {"name": "Shadow Claw", "type": "ghost", "code": "SC"}], "charge_moves": [{"name": "Dragon Claw", "type": "dragon", "code": "DC"}, {"name": "Ancient Power", "type": "rock", "code": "AP"}, {"name": "Shadow Sneak", "type": "ghost", "code": "SS"}]}
